@@ -1,0 +1,14 @@
+[build]
+  # Point to the frontend folder where the React code lives
+  base = "frontend"
+  
+  # Command to install and build the React app
+  command = "npm run build"
+  
+  # Publish folder containing build files
+  publish = "build"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
