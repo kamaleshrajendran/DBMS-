@@ -15,14 +15,26 @@ export default function MapCanvas({ imageUrl, pins, path, selectedVenue, onPinCl
     
     // Canvas click handler
     const handleClick = (e) => {
-      if (!img.width) return; // wait until image loads
+      if (!img.width) return;
       const rect = canvas.getBoundingClientRect();
-      const xOffset = (canvas.width - (img.width * scale)) / 2;
-      const yOffset = (canvas.height - (img.height * scale)) / 2;
-      const x = (e.clientX - rect.left - offset.x - xOffset) / scale;
-      const y = (e.clientY - rect.top - offset.y - yOffset) / scale;
       
-      // Only pin if clicked inside image bounds
+      // 1. Convert DOM coordinates to Canvas logical coordinates
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+      
+      // 2. Calculate drawing scale and offsets
+      const fitScale = Math.min(canvas.width / img.width, canvas.height / img.height);
+      const actualScale = scale * fitScale;
+      const xOffset = (canvas.width - (img.width * actualScale)) / 2;
+      const yOffset = (canvas.height - (img.height * actualScale)) / 2;
+      
+      // 3. Map Canvas coordinates to original Image coordinates
+      const x = (canvasX - offset.x - xOffset) / actualScale;
+      const y = (canvasY - offset.y - yOffset) / actualScale;
+      
+      // 4. Pin if clicked inside image bounds
       if (x >= 0 && x <= img.width && y >= 0 && y <= img.height) {
         onPinClick({ x, y });
       }
@@ -31,50 +43,56 @@ export default function MapCanvas({ imageUrl, pins, path, selectedVenue, onPinCl
     img.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Save context state
-      ctx.save();
+      const fitScale = Math.min(canvas.width / img.width, canvas.height / img.height);
+      const actualScale = scale * fitScale;
+      const xOffset = (canvas.width - (img.width * actualScale)) / 2;
+      const yOffset = (canvas.height - (img.height * actualScale)) / 2;
       
-      // Calculate centering offsets
-      const xOffset = (canvas.width - (img.width * scale)) / 2;
-      const yOffset = (canvas.height - (img.height * scale)) / 2;
-      
-      ctx.translate(offset.x + xOffset, offset.y + yOffset);
-      ctx.scale(scale, scale);
+      // 1. Draw image
+      ctx.drawImage(
+        img, 
+        0, 0, img.width, img.height, 
+        offset.x + xOffset, offset.y + yOffset, img.width * actualScale, img.height * actualScale
+      );
 
-      // Draw image
-      ctx.drawImage(img, 0, 0);
+      // Helper to map original image coords to screen coords
+      const getScreenCoords = (imgX, imgY) => ({
+        x: offset.x + xOffset + (imgX * actualScale),
+        y: offset.y + yOffset + (imgY * actualScale)
+      });
 
-      // Draw path
+      // 2. Draw path
       if (path && path.length > 1) {
         ctx.strokeStyle = '#00FF00';
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(path[0].x, path[0].y);
+        const start = getScreenCoords(path[0].x, path[0].y);
+        ctx.moveTo(start.x, start.y);
         for (let i = 1; i < path.length; i++) {
-          ctx.lineTo(path[i].x, path[i].y);
+          const pt = getScreenCoords(path[i].x, path[i].y);
+          ctx.lineTo(pt.x, pt.y);
         }
         ctx.stroke();
       }
 
-      // Draw existing pins
+      // 3. Draw existing pins
       if (pins && pins.length > 0) {
         pins.forEach((pin) => {
           const isSelected = selectedVenue && pin._id === selectedVenue._id;
           ctx.fillStyle = isSelected ? '#FF0000' : '#000000';
           ctx.font = '16px Arial';
-          // Draw Emoji and Name
-          ctx.fillText(`📍 ${pin.name}`, pin.coordinates.x - 8, pin.coordinates.y + 5);
+          const pt = getScreenCoords(pin.coordinates.x, pin.coordinates.y);
+          ctx.fillText(`📍 ${pin.name}`, pt.x - 8, pt.y + 5);
         });
       }
 
-      // Draw new pin if exists
+      // 4. Draw new pin if exists
       if (newPin) {
         ctx.fillStyle = '#FF0000';
         ctx.font = 'bold 16px Arial';
-        ctx.fillText(`📍 New Venue`, newPin.x - 8, newPin.y + 5);
+        const pt = getScreenCoords(newPin.x, newPin.y);
+        ctx.fillText(`📍 New Venue`, pt.x - 8, pt.y + 5);
       }
-
-      ctx.restore();
     };
 
     img.src = imageUrl;
