@@ -110,6 +110,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteBuilding = async (e, buildingId) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this building? All floors and venues inside it will be deleted.')) return;
+    try {
+      await buildingAPI.deleteBuilding(buildingId);
+      if (selectedBuilding?._id === buildingId) {
+        setSelectedBuilding(null);
+        setSelectedFloor(null);
+        setFloors([]);
+        setVenues([]);
+      }
+      loadBuildings();
+    } catch (err) {
+      alert('Error deleting building');
+    }
+  };
+
+  const handleDeleteFloor = async (e, floorId) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this floor? All venues on it will be deleted.')) return;
+    try {
+      await floorAPI.deleteFloor(floorId);
+      if (selectedFloor?._id === floorId) {
+        setSelectedFloor(null);
+        setVenues([]);
+      }
+      loadFloors(selectedBuilding._id);
+    } catch (err) {
+      alert('Error deleting floor');
+    }
+  };
+
   const handleGenerateQR = async () => {
     try {
       const res = await buildingAPI.getQRCode(selectedBuilding._id, selectedFloor?._id);
@@ -143,7 +175,15 @@ export default function AdminDashboard() {
                 className={`building-item ${selectedBuilding?._id === b._id ? 'active' : ''}`}
                 onClick={() => handleBuildingSelect(b)}
               >
-                <h4>{b.name}</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4>{b.name}</h4>
+                  <button 
+                    onClick={(e) => handleDeleteBuilding(e, b._id)}
+                    className="btn-delete"
+                    style={{ background: 'transparent', color: '#ff4d4f', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 5px' }}
+                    title="Delete Building"
+                  >✕</button>
+                </div>
                 <p>{b.description}</p>
               </div>
             ))}
@@ -173,8 +213,15 @@ export default function AdminDashboard() {
                       key={f._id}
                       className={`floor-item ${selectedFloor?._id === f._id ? 'active' : ''}`}
                       onClick={() => handleFloorSelect(f)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                     >
-                      Floor {f.floorNumber}
+                      <span>Floor {f.floorNumber}</span>
+                      <button 
+                        onClick={(e) => handleDeleteFloor(e, f._id)}
+                        className="btn-delete"
+                        style={{ background: 'transparent', color: '#ff4d4f', border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 5px' }}
+                        title="Delete Floor"
+                      >✕</button>
                     </div>
                   ))}
                 </div>
