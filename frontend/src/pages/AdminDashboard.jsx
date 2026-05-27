@@ -12,6 +12,7 @@ export default function AdminDashboard() {
   const [showForm, setShowForm] = useState(null);
   const [formData, setFormData] = useState({});
   const [newPin, setNewPin] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadBuildings();
@@ -55,6 +56,8 @@ export default function AdminDashboard() {
   };
 
   const handleCreateBuilding = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await buildingAPI.createBuilding(formData);
       loadBuildings();
@@ -62,10 +65,14 @@ export default function AdminDashboard() {
       setFormData({});
     } catch (err) {
       alert('Error creating building');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAddFloor = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await floorAPI.addFloor(selectedBuilding._id, formData);
       loadFloors(selectedBuilding._id);
@@ -73,6 +80,8 @@ export default function AdminDashboard() {
       setFormData({});
     } catch (err) {
       alert('Error adding floor');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -82,6 +91,8 @@ export default function AdminDashboard() {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await venueAPI.addVenue(selectedFloor._id, {
         ...formData,
@@ -94,6 +105,8 @@ export default function AdminDashboard() {
       setNewPin(null);
     } catch (err) {
       alert('Error adding venue');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -220,8 +233,8 @@ export default function AdminDashboard() {
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
-                <button onClick={handleCreateBuilding} className="btn-primary">
-                  Create Building
+                <button onClick={handleCreateBuilding} className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Creating...' : 'Create Building'}
                 </button>
               </>
             )}
@@ -240,8 +253,8 @@ export default function AdminDashboard() {
                   value={formData.mapImageUrl || ''}
                   onChange={(e) => setFormData({ ...formData, mapImageUrl: e.target.value })}
                 />
-                <button onClick={handleAddFloor} className="btn-primary">
-                  Add Floor
+                <button onClick={handleAddFloor} className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add Floor'}
                 </button>
               </>
             )}
@@ -266,8 +279,8 @@ export default function AdminDashboard() {
                   value={formData.category || ''}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 />
-                <button onClick={handleAddVenue} className="btn-primary">
-                  Add Venue
+                <button onClick={handleAddVenue} className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Adding...' : 'Add Venue'}
                 </button>
               </>
             )}
