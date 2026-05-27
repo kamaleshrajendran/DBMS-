@@ -57,12 +57,23 @@ exports.generateQR = async (req, res) => {
     }
 
     let floor = null;
-    if (req.query.floorId && req.query.floorId !== 'undefined') {
+    if (req.query.floorId && req.query.floorId !== 'undefined' && req.query.floorId !== 'null') {
       floor = await Floor.findById(req.query.floorId);
     } else {
       floor = await Floor.findOne({ buildingId: building._id });
     }
-    const qrData = (floor && floor.mapImageUrl) ? floor.mapImageUrl : building.qrCodeData;
+    
+    let qrData = building.qrCodeData;
+    // Fallback if qrCodeData is missing
+    if (!qrData) {
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      qrData = `${appUrl}/scan/${building._id}`;
+    }
+    
+    // Append floorId to the navigation URL instead of trying to encode the image URL
+    if (floor) {
+      qrData = `${qrData}?floorId=${floor._id}`;
+    }
 
     const qrBuffer = await generateQRCode(qrData);
     res.contentType('image/png');
