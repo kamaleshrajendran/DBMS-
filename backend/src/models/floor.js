@@ -11,6 +11,7 @@ const floorSchema = new mongoose.Schema({
     required: true,
   },
   mapImageUrl: String, // S3/Firebase Storage link
+  pinnedMapImageUrl: String, // Flattened image with pins
   width: {
     type: Number,
     default: 800,

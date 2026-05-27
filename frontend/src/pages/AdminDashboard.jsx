@@ -110,6 +110,50 @@ export default function AdminDashboard() {
     }
   };
 
+  const handlePinClick = (coords) => {
+    setNewPin(coords);
+    setShowForm('venue');
+  };
+
+  const handleSavePinnedMap = async () => {
+    if (!selectedFloor || !selectedFloor.mapImageUrl) return;
+    setIsSubmitting(true);
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      
+      img.onload = async () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        venues.forEach(pin => {
+          ctx.fillStyle = '#000000';
+          ctx.font = '16px Arial';
+          ctx.fillText(`📍 ${pin.name}`, pin.coordinates.x - 8, pin.coordinates.y + 5);
+        });
+        
+        const dataUrl = canvas.toDataURL('image/png');
+        await floorAPI.updateFloor(selectedFloor._id, { pinnedMapImageUrl: dataUrl });
+        alert('Pinned map saved and published successfully!');
+        loadFloors(selectedBuilding._id);
+        setIsSubmitting(false);
+      };
+      
+      img.onerror = () => {
+        alert('Error loading image for publishing.');
+        setIsSubmitting(false);
+      };
+      
+      img.src = selectedFloor.mapImageUrl;
+    } catch (err) {
+      alert('Error publishing pinned map');
+      setIsSubmitting(false);
+    }
+  };
+
   const handleDeleteBuilding = async (e, buildingId) => {
     e.stopPropagation();
     if (!window.confirm('Are you sure you want to delete this building? All floors and venues inside it will be deleted.')) return;
@@ -231,15 +275,20 @@ export default function AdminDashboard() {
               {selectedFloor && (
                 <div className="floor-editor">
                   <h3>Floor {selectedFloor.floorNumber} - Map Editor</h3>
+                  <div className="editor-controls" style={{ marginBottom: '10px' }}>
+                    <button onClick={handleSavePinnedMap} className="btn-primary" disabled={isSubmitting}>
+                      {isSubmitting ? 'Publishing...' : '💾 Save & Publish Pinned Map'}
+                    </button>
+                    <span style={{ marginLeft: '10px', fontSize: '0.9rem', color: '#666' }}>
+                      Click on the map below to quickly add a new venue pin.
+                    </span>
+                  </div>
                   <MapCanvas
                     imageUrl={selectedFloor.mapImageUrl}
                     pins={venues}
-                    onPinClick={setNewPin}
+                    onPinClick={handlePinClick}
                     newPin={newPin}
                   />
-                  <button onClick={() => setShowForm('venue')} className="btn-secondary">
-                    + Add Venue Pin
-                  </button>
 
                   {/* Venues List */}
                   <div className="venues-list">

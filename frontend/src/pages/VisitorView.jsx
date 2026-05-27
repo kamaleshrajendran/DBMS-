@@ -94,8 +94,8 @@ export default function VisitorView() {
         <main className="map-view">
           {selectedFloor && (
             <MapCanvas
-              imageUrl={selectedFloor.mapImageUrl}
-              pins={venues}
+              imageUrl={selectedFloor.pinnedMapImageUrl || selectedFloor.mapImageUrl}
+              pins={selectedVenue ? [selectedVenue] : []}
               path={path}
               selectedVenue={selectedVenue}
               onPinClick={() => {}}
