@@ -235,6 +235,7 @@ export default function AdminDashboard() {
                     imageUrl={selectedFloor.mapImageUrl}
                     pins={venues}
                     onPinClick={setNewPin}
+                    newPin={newPin}
                   />
                   <button onClick={() => setShowForm('venue')} className="btn-secondary">
                     + Add Venue Pin
@@ -263,7 +264,7 @@ export default function AdminDashboard() {
       {showForm && (
         <div className="modal">
           <div className="modal-content">
-            <button className="close-btn" onClick={() => setShowForm(null)}>
+            <button className="close-btn" onClick={() => { setShowForm(null); setNewPin(null); }}>
               ✕
             </button>
 
@@ -295,10 +296,20 @@ export default function AdminDashboard() {
                   value={formData.floorNumber || ''}
                   onChange={(e) => setFormData({ ...formData, floorNumber: parseInt(e.target.value) })}
                 />
+                <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Upload Floor Map Image:</label>
                 <input
-                  placeholder="Map Image URL"
-                  value={formData.mapImageUrl || ''}
-                  onChange={(e) => setFormData({ ...formData, mapImageUrl: e.target.value })}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData({ ...formData, mapImageUrl: reader.result });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                 />
                 <button onClick={handleAddFloor} className="btn-primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Adding...' : 'Add Floor'}

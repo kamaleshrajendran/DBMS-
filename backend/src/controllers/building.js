@@ -10,13 +10,15 @@ exports.createBuilding = async (req, res) => {
       name,
       description,
       createdBy: req.user.id,
-      qrCodeData: generateQRDataURL(null), // will update after save
     });
 
-    await building.save();
-
-    // Update with actual building ID
-    building.qrCodeData = generateQRDataURL(building._id);
+    // Mongoose automatically generates the _id synchronously upon creation,
+    // so we can assign the QR code data immediately and save just once!
+    let qrData = building.qrCodeData;
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    qrData = `${appUrl}/scan/${building._id}`;
+    
+    building.qrCodeData = qrData;
     await building.save();
 
     res.status(201).json({
