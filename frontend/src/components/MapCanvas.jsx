@@ -17,10 +17,18 @@ export default function MapCanvas({ imageUrl, pins, path, selectedVenue, onPinCl
     const handleClick = (e) => {
       if (!img.width) return; // wait until image loads
       const rect = canvas.getBoundingClientRect();
+      
+      // Map screen coordinates to internal canvas coordinates
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const canvasX = (e.clientX - rect.left) * scaleX;
+      const canvasY = (e.clientY - rect.top) * scaleY;
+      
       const xOffset = (canvas.width - (img.width * scale)) / 2;
       const yOffset = (canvas.height - (img.height * scale)) / 2;
-      const x = (e.clientX - rect.left - offset.x - xOffset) / scale;
-      const y = (e.clientY - rect.top - offset.y - yOffset) / scale;
+      
+      const x = (canvasX - offset.x - xOffset) / scale;
+      const y = (canvasY - offset.y - yOffset) / scale;
       
       // Only pin if clicked inside image bounds
       if (x >= 0 && x <= img.width && y >= 0 && y <= img.height) {
@@ -56,22 +64,50 @@ export default function MapCanvas({ imageUrl, pins, path, selectedVenue, onPinCl
         ctx.stroke();
       }
 
+      const drawPin = (context, px, py, color, label) => {
+        context.save();
+        context.translate(px, py);
+        
+        // Pin body
+        context.fillStyle = color;
+        context.beginPath();
+        context.arc(0, -20, 10, Math.PI, 0); 
+        context.lineTo(0, 0);
+        context.lineTo(-10, -20);
+        context.fill();
+        
+        // Inner circle
+        context.fillStyle = '#FFFFFF';
+        context.beginPath();
+        context.arc(0, -20, 4, 0, Math.PI * 2);
+        context.fill();
+        
+        // Label with white background
+        if (label) {
+          context.font = 'bold 14px Arial';
+          const textWidth = context.measureText(label).width;
+          context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          context.fillRect(-textWidth/2 - 4, -45, textWidth + 8, 20);
+          
+          context.fillStyle = '#000000';
+          context.textAlign = 'center';
+          context.fillText(label, 0, -30);
+        }
+        
+        context.restore();
+      };
+
       // Draw existing pins
       if (pins && pins.length > 0) {
         pins.forEach((pin) => {
           const isSelected = selectedVenue && pin._id === selectedVenue._id;
-          ctx.fillStyle = isSelected ? '#FF0000' : '#000000';
-          ctx.font = '16px Arial';
-          // Draw Emoji and Name
-          ctx.fillText(`📍 ${pin.name}`, pin.coordinates.x - 8, pin.coordinates.y + 5);
+          drawPin(ctx, pin.coordinates.x, pin.coordinates.y, isSelected ? '#FF0000' : '#000000', pin.name);
         });
       }
 
       // Draw new pin if exists
       if (newPin) {
-        ctx.fillStyle = '#FF0000';
-        ctx.font = 'bold 16px Arial';
-        ctx.fillText(`📍 New Venue`, newPin.x - 8, newPin.y + 5);
+        drawPin(ctx, newPin.x, newPin.y, '#0084FF', 'New Venue');
       }
 
       ctx.restore();

@@ -129,10 +129,38 @@ export default function AdminDashboard() {
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
         
+        const drawPin = (context, px, py, color, label) => {
+          context.save();
+          context.translate(px, py);
+          
+          context.fillStyle = color;
+          context.beginPath();
+          context.arc(0, -20, 10, Math.PI, 0); 
+          context.lineTo(0, 0);
+          context.lineTo(-10, -20);
+          context.fill();
+          
+          context.fillStyle = '#FFFFFF';
+          context.beginPath();
+          context.arc(0, -20, 4, 0, Math.PI * 2);
+          context.fill();
+          
+          if (label) {
+            context.font = 'bold 14px Arial';
+            const textWidth = context.measureText(label).width;
+            context.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            context.fillRect(-textWidth/2 - 4, -45, textWidth + 8, 20);
+            
+            context.fillStyle = '#000000';
+            context.textAlign = 'center';
+            context.fillText(label, 0, -30);
+          }
+          
+          context.restore();
+        };
+
         venues.forEach(pin => {
-          ctx.fillStyle = '#000000';
-          ctx.font = '16px Arial';
-          ctx.fillText(`📍 ${pin.name}`, pin.coordinates.x - 8, pin.coordinates.y + 5);
+          drawPin(ctx, pin.coordinates.x, pin.coordinates.y, '#000000', pin.name);
         });
         
         const dataUrl = canvas.toDataURL('image/png');
